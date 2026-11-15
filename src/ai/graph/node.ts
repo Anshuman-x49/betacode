@@ -1,5 +1,5 @@
 import { ChatGroq } from "@langchain/groq";
-import { getApiKey } from "../utils/file.util.js";
+import { getApiKey } from "../../utils/file.util.js";
 import { AIMessage, BaseMessage } from "@langchain/core/messages";
 
 // The state passed into the LLM node contains a conversation history of messages.

@@ -1,8 +1,12 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 import z from "zod";
 import { LLMNode } from "./node.js";
-import rl from "../utils/readline.util.js";
-import { BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import rl from "../../utils/readline.util.js";
+import {
+  BaseMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 
 // Define the graph state: a list of conversation messages.
 const state = z.object({
@@ -16,7 +20,8 @@ const systemPrompt = `You are a senior software engineer and coding assistant. F
 - Do not compromise security, correctness, validation, or data-integrity safeguards.
 - Keep responses practical, concise, and implementation-focused.
 - Explain trade-offs briefly when a shortcut or limitation is necessary.
-- Maintain a clear separation between problem-solving, code changes, and validation.`;
+- Maintain a clear separation between problem-solving, code changes, and validation.
+- This is the absolute path ${process.cwd()}`;
 
 // Build the workflow: start -> LLM node -> end.
 const graph = new StateGraph(state)
@@ -37,13 +42,18 @@ export async function initGraph() {
       rl.question("[User]: ", resolve),
     );
 
+    if (
+      userInput.toLowerCase() === "/bye" ||
+      userInput.toLowerCase() === "/exit"
+    ) {
+      break;
+    }
+
     // Add the user's message to the conversation history.
     messages.push(new HumanMessage(userInput));
 
     // Send the input through the graph so the LLM node can generate a response.
-    const response = await graph.invoke({
-      messages,
-    });
+    const response = await graph.invoke({ messages });
 
     // Keep the full conversation history for the next turn.
     messages = response.messages;
