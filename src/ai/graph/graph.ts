@@ -1,6 +1,6 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 import z from "zod";
-import { LLMNode } from "./node.js";
+import { LLMNode, ToolNode } from "./node.js";
 import rl from "../../utils/readline.util.js";
 import {
   BaseMessage,
@@ -26,8 +26,21 @@ const systemPrompt = `You are a senior software engineer and coding assistant. F
 // Build the workflow: start -> LLM node -> end.
 const graph = new StateGraph(state)
   .addNode("LLMNode", LLMNode)
+  .addNode("ToolNode", ToolNode)
   .addEdge(START, "LLMNode")
-  .addEdge("LLMNode", END)
+  .addConditionalEdges(
+    "LLMNode",
+    (state) => {
+      const lastMessage = state.messages[state.messages.length - 1];
+
+      if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
+        return "ToolNode";
+      }
+      return END;
+    },
+    ["ToolNode", END],
+  )
+  .addEdge("ToolNode", "LLMNode")
   .compile();
 
 /**
